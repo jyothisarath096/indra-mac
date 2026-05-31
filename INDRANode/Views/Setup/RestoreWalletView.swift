@@ -115,8 +115,10 @@ struct RestoreWalletView: View {
 
             do {
                 try self.nodeManager.createDataDirectory()
+                // Use sortedKeys only — no prettyPrinted (adds spaces around colons
+                // which breaks the node's naive key parser)
                 let data = try JSONSerialization.data(
-                    withJSONObject: keysJson, options: .prettyPrinted
+                    withJSONObject: keysJson, options: .sortedKeys
                 )
                 let keysPath = URL(fileURLWithPath: self.nodeManager.keysPath)
                 try data.write(to: keysPath)
