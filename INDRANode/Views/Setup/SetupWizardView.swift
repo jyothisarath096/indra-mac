@@ -258,6 +258,8 @@ struct SetupWizardView: View {
             let classicalPk = keys.classicalPk.map { String(format: "%02x", $0) }.joined()
             let pqPk        = Data(keys.pqPk)
             let classicalSeed = Data(keys.classicalSeed)
+            let blsSeed     = Data(keys.blsSeed)
+            let vrfSeed     = Data(keys.vrfSeed)
             let pqSk        = Data(keys.pqSk)
 
             // Save keys.json to data directory
@@ -269,6 +271,8 @@ struct SetupWizardView: View {
                 ],
                 "private": [
                     "hybrid_seed": classicalSeed.map { String(format: "%02x", $0) }.joined(),
+                    "bls_seed": blsSeed.map { String(format: "%02x", $0) }.joined(),
+                    "vrf_seed": vrfSeed.map { String(format: "%02x", $0) }.joined(),
                     "pq_sk": pqSk.map { String(format: "%02x", $0) }.joined(),
                     "WARNING": "Keep private seeds secret. Never share this file."
                 ]

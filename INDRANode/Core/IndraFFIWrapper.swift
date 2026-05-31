@@ -22,10 +22,11 @@ let INDRA_MNEMONIC_MAX_BYTES: Int = 300
 // MARK: - IndraKeyPairBuffer
 // Mirrors C struct layout exactly using a raw byte buffer.
 // Total: 32 (validator_id) + 32 (classical_pk) + 1312 (pq_pk)
-//      + 32 (classical_seed) + 2560 (pq_sk) = 3968 bytes
+//      + 32 (classical_seed) + 2560 (pq_sk) + 32 (bls_seed)
+//      + 32 (vrf_seed) = 4032 bytes
 
 final class IndraKeyPairBuffer {
-    static let size = 32 + 32 + 1312 + 32 + 2560  // 3968 bytes
+    static let size = 32 + 32 + 1312 + 32 + 2560 + 32 + 32  // 4032 bytes
     var buffer: [UInt8]
 
     init() { buffer = [UInt8](repeating: 0, count: IndraKeyPairBuffer.size) }
@@ -35,6 +36,8 @@ final class IndraKeyPairBuffer {
     var pqPk:          [UInt8] { Array(buffer[64..<1376]) }
     var classicalSeed: [UInt8] { Array(buffer[1376..<1408]) }
     var pqSk:          [UInt8] { Array(buffer[1408..<3968]) }
+    var blsSeed:       [UInt8] { Array(buffer[3968..<4000]) }
+    var vrfSeed:       [UInt8] { Array(buffer[4000..<4032]) }
 
     func withUnsafeMutablePointer<T>(_ body: (UnsafeMutablePointer<UInt8>) throws -> T) rethrows -> T {
         try buffer.withUnsafeMutableBytes { ptr in
