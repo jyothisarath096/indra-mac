@@ -6,97 +6,74 @@ struct MainDashboardView: View {
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 20) {
+            VStack(alignment: .leading, spacing: 16) {
                 Text("DASHBOARD")
                     .font(.indraTitle).tracking(4).foregroundColor(.indraGold)
                     .padding(.top, 32)
 
-                // MARK: Consensus Status
-                consensusCard
-
-                // MARK: Network Stats
+                // MARK: Status + Network (combined)
                 INDRACard {
-                    VStack(spacing: 12) {
-                        INDRASectionLabel(text: "Network")
+                    VStack(spacing: 16) {
+                        // Status row
+                        HStack(spacing: 10) {
+                            Circle()
+                                .fill(statusColor)
+                                .frame(width: 8, height: 8)
+                                .shadow(color: statusColor.opacity(0.6), radius: 3)
+                            Text(statusTitle)
+                                .font(.indraBody).foregroundColor(.indraText)
+                            Spacer()
+                            if nodeManager.blockHeight > 0 {
+                                Text("BLOCK #\(nodeManager.blockHeight)")
+                                    .font(.indraMonoSmall).tracking(1)
+                                    .foregroundColor(.indraGreen)
+                            }
+                        }
+
+                        if !statusSubtitle.isEmpty {
+                            Text(statusSubtitle)
+                                .font(.indraMonoSmall).foregroundColor(.indraMuted)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                        }
+
+                        INDRADivider()
+
+                        // Stats row
                         HStack(spacing: 0) {
-                            statCell("Block Height", "\(nodeManager.blockHeight)")
+                            miniStat("HEIGHT", "\(nodeManager.blockHeight)")
                             Divider().background(Color.indraBorder)
-                            statCell("Epoch", "\(nodeManager.currentEpoch)")
+                            miniStat("EPOCH", "\(nodeManager.currentEpoch)")
                             Divider().background(Color.indraBorder)
-                            statCell("Peers Online", "\(nodeManager.connectedPeers)")
+                            miniStat("PEERS", "\(nodeManager.connectedPeers)")
                             Divider().background(Color.indraBorder)
-                            statCell("Phase", "\(nodeManager.validatorSetPhase)")
+                            miniStat("VALIDATORS",
+                                     "\(nodeManager.activeValidators)/\(nodeManager.maxActiveValidators)")
+                            Divider().background(Color.indraBorder)
+                            miniStat("PHASE", "\(nodeManager.validatorSetPhase)")
                         }
                         .fixedSize(horizontal: false, vertical: true)
-                    }
-                }
 
-                // MARK: Validator Set
-                INDRACard {
-                    VStack(alignment: .leading, spacing: 12) {
-                        INDRASectionLabel(text: "Validator Set")
-                        HStack(spacing: 0) {
-                            statCell("In Consensus Set",
-                                     "\(nodeManager.activeValidators)",
-                                     unit: "of \(nodeManager.maxActiveValidators) slots")
-                            Divider().background(Color.indraBorder)
-                            statCell("Peers Connected",
-                                     "\(nodeManager.connectedPeers)",
-                                     unit: "online now")
-                            Divider().background(Color.indraBorder)
-                            statCell("Slots Available",
-                                     "\(nodeManager.maxActiveValidators - nodeManager.activeValidators)",
-                                     unit: "open")
-                        }
-                        .fixedSize(horizontal: false, vertical: true)
-
-                        // Consensus set progress bar
-                        VStack(alignment: .leading, spacing: 4) {
-                            HStack {
-                                Text("Consensus Set Capacity")
+                        // Peers progress bar (only when waiting)
+                        if nodeManager.status.isRunning && nodeManager.blockHeight == 0 {
+                            VStack(spacing: 4) {
+                                GeometryReader { geo in
+                                    ZStack(alignment: .leading) {
+                                        Rectangle().fill(Color.indraBorder).frame(height: 3)
+                                        Rectangle()
+                                            .fill(nodeManager.connectedPeers >= nodeManager.peersNeeded
+                                                ? Color.indraGreen : Color.indraGold)
+                                            .frame(
+                                                width: geo.size.width
+                                                    * Double(min(nodeManager.connectedPeers + 1,
+                                                                 nodeManager.peersNeeded + 1))
+                                                    / Double(nodeManager.peersNeeded + 1),
+                                                height: 3
+                                            )
+                                    }.cornerRadius(1.5)
+                                }
+                                .frame(height: 3)
+                                Text("\(nodeManager.connectedPeers + 1) of \(nodeManager.peersNeeded + 1) validators needed for consensus")
                                     .font(.indraMonoSmall).foregroundColor(.indraMuted)
-                                Spacer()
-                                Text("\(nodeManager.activeValidators) registered · \(nodeManager.connectedPeers) online")
-                                    .font(.indraMonoSmall).foregroundColor(.indraMuted)
-                            }
-                            GeometryReader { geo in
-                                ZStack(alignment: .leading) {
-                                    Rectangle().fill(Color.indraBorder).frame(height: 4)
-                                    // Registered validators (gold)
-                                    Rectangle()
-                                        .fill(Color.indraGold)
-                                        .frame(
-                                            width: nodeManager.maxActiveValidators > 0
-                                                ? geo.size.width * Double(nodeManager.activeValidators) / Double(nodeManager.maxActiveValidators)
-                                                : 0,
-                                            height: 4
-                                        )
-                                    // Online peers (green overlay)
-                                    Rectangle()
-                                        .fill(Color.indraGreen)
-                                        .frame(
-                                            width: nodeManager.maxActiveValidators > 0
-                                                ? geo.size.width * Double(nodeManager.connectedPeers + 1) / Double(nodeManager.maxActiveValidators)
-                                                : 0,
-                                            height: 4
-                                        )
-                                }
-                                .cornerRadius(2)
-                            }
-                            .frame(height: 4)
-                            HStack {
-                                HStack(spacing: 4) {
-                                    Circle().fill(Color.indraGreen).frame(width: 6, height: 6)
-                                    Text("Online").font(.indraMonoSmall).foregroundColor(.indraMuted)
-                                }
-                                HStack(spacing: 4) {
-                                    Circle().fill(Color.indraGold).frame(width: 6, height: 6)
-                                    Text("In set").font(.indraMonoSmall).foregroundColor(.indraMuted)
-                                }
-                                HStack(spacing: 4) {
-                                    Circle().fill(Color.indraBorder).frame(width: 6, height: 6)
-                                    Text("Open slots").font(.indraMonoSmall).foregroundColor(.indraMuted)
-                                }
                             }
                         }
                     }
@@ -130,7 +107,8 @@ struct MainDashboardView: View {
                             INDRASectionLabel(text: "Validator Identity")
                             HStack {
                                 VStack(alignment: .leading, spacing: 4) {
-                                    if let name = walletStore.displayName {
+                                    if let name = walletStore.displayName,
+                                       !name.isEmpty {
                                         Text(name)
                                             .font(.indraBody).foregroundColor(.indraText)
                                     }
@@ -148,7 +126,7 @@ struct MainDashboardView: View {
                                 }
                                 .buttonStyle(.plain)
                             }
-                            Text("Your address on the INDRA network. Share it to receive INDRA or delegation.")
+                            Text("Your address on the INDRA network.")
                                 .font(.indraMonoSmall).foregroundColor(.indraMuted)
                         }
                     }
@@ -157,13 +135,13 @@ struct MainDashboardView: View {
                 // MARK: Disk warning
                 if nodeManager.diskAvailableGB > 0 && nodeManager.diskAvailableGB < 5 {
                     INDRACard {
-                        HStack(spacing: 12) {
+                        HStack(spacing: 10) {
                             Image(systemName: "exclamationmark.triangle.fill")
                                 .foregroundColor(nodeManager.diskAvailableGB < 0.5
                                     ? .indraRed : .indraGold)
                             Text(nodeManager.diskAvailableGB < 0.5
-                                ? "CRITICAL: \(String(format: "%.1f", nodeManager.diskAvailableGB)) GB remaining. Free space immediately."
-                                : "WARNING: \(String(format: "%.1f", nodeManager.diskAvailableGB)) GB disk space remaining.")
+                                ? "CRITICAL: \(String(format: "%.1f", nodeManager.diskAvailableGB)) GB remaining."
+                                : "WARNING: \(String(format: "%.1f", nodeManager.diskAvailableGB)) GB disk remaining.")
                                 .font(.indraBody)
                                 .foregroundColor(nodeManager.diskAvailableGB < 0.5
                                     ? .indraRed : .indraGold)
@@ -178,101 +156,47 @@ struct MainDashboardView: View {
         .background(Color.indraBlack)
     }
 
-    // MARK: Consensus Status Card
-    var consensusCard: some View {
-        INDRACard {
-            VStack(alignment: .leading, spacing: 12) {
-                INDRASectionLabel(text: "Consensus Status")
-
-                HStack(spacing: 12) {
-                    // Status indicator
-                    Circle()
-                        .fill(consensusColor)
-                        .frame(width: 10, height: 10)
-                        .shadow(color: consensusColor.opacity(0.5), radius: 4)
-
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(consensusTitle)
-                            .font(.indraBody).foregroundColor(.indraText)
-                        Text(consensusSubtitle)
-                            .font(.indraMonoSmall).foregroundColor(.indraMuted)
-                    }
-
-                    Spacer()
-
-                    if nodeManager.blockHeight > 0 {
-                        VStack(alignment: .trailing, spacing: 2) {
-                            Text("LAST BLOCK")
-                                .font(.indraMonoSmall).tracking(1).foregroundColor(.indraMuted)
-                            Text("#\(nodeManager.blockHeight)")
-                                .font(.indraTitle).foregroundColor(.indraGreen)
-                        }
-                    }
-                }
-
-                // Peers needed bar
-                if nodeManager.connectedPeers < nodeManager.peersNeeded {
-                    let needed = nodeManager.peersNeeded
-                    let have = nodeManager.connectedPeers + 1 // include self
-                    VStack(alignment: .leading, spacing: 4) {
-                        HStack {
-                            Text("Validators online")
-                                .font(.indraMonoSmall).foregroundColor(.indraMuted)
-                            Spacer()
-                            Text("\(have) of \(needed + 1) needed for consensus")
-                                .font(.indraMonoSmall).foregroundColor(.indraMuted)
-                        }
-                        GeometryReader { geo in
-                            ZStack(alignment: .leading) {
-                                Rectangle().fill(Color.indraBorder).frame(height: 6)
-                                Rectangle()
-                                    .fill(have >= needed + 1 ? Color.indraGreen : Color.indraGold)
-                                    .frame(
-                                        width: geo.size.width * Double(min(have, needed + 1)) / Double(needed + 1),
-                                        height: 6
-                                    )
-                            }
-                            .cornerRadius(3)
-                        }
-                        .frame(height: 6)
-                    }
-                }
-            }
-        }
-    }
-
-    var consensusColor: Color {
+    // MARK: - Status helpers
+    var statusColor: Color {
+        guard nodeManager.status.isRunning else { return .indraMuted }
         if nodeManager.blockHeight > 0 { return .indraGreen }
         if nodeManager.connectedPeers >= nodeManager.peersNeeded { return .indraGold }
         return .indraRed
     }
 
-    var consensusTitle: String {
-        if !nodeManager.status.isRunning { return "Node Offline" }
+    var statusTitle: String {
+        guard nodeManager.status.isRunning else { return "Node Offline" }
         if nodeManager.blockHeight > 0 { return "Producing Blocks" }
         if nodeManager.connectedPeers >= nodeManager.peersNeeded { return "Consensus Forming" }
         return "Waiting for Peers"
     }
 
-    var consensusSubtitle: String {
-        if !nodeManager.status.isRunning {
-            return "Start the node to participate in consensus"
-        }
-        if nodeManager.blockHeight > 0 {
-            return "Chain is active · Block #\(nodeManager.blockHeight)"
-        }
+    var statusSubtitle: String {
+        guard nodeManager.status.isRunning else { return "" }
+        if nodeManager.blockHeight > 0 { return "" }
         let needed = nodeManager.peersNeeded - nodeManager.connectedPeers
         if needed > 0 {
-            return "Need \(needed) more validator\(needed == 1 ? "" : "s") online (BFT requires >66% of \(nodeManager.activeValidators))"
+            return "Need \(needed) more validator\(needed == 1 ? "" : "s") online · BFT requires >66% of \(nodeManager.activeValidators)"
         }
         return "Validators connected · waiting for first block"
+    }
+
+    // MARK: - Stat cells
+    func miniStat(_ label: String, _ value: String) -> some View {
+        VStack(spacing: 2) {
+            Text(label)
+                .font(.system(size: 9)).tracking(1).foregroundColor(.indraMuted)
+            Text(value)
+                .font(.indraMono).foregroundColor(.indraText)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 6)
     }
 
     func statCell(_ label: String, _ value: String, unit: String = "") -> some View {
         VStack(spacing: 4) {
             Text(label.uppercased())
                 .font(.indraMonoSmall).tracking(1).foregroundColor(.indraMuted)
-                .multilineTextAlignment(.center)
             Text(value)
                 .font(.indraTitle).foregroundColor(.indraText)
             if !unit.isEmpty {
