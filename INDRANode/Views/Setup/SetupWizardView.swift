@@ -12,6 +12,7 @@ struct SetupWizardView: View {
     @State private var verifyInputs = ["", "", ""]
     @State private var verifyError = false
     @State private var generateError: String?
+    @State private var displayName: String = ""
 
     var body: some View {
         ZStack {
@@ -184,6 +185,20 @@ struct SetupWizardView: View {
                 }
             }
 
+            VStack(alignment: .leading, spacing: 8) {
+                Text("DISPLAY NAME (optional)")
+                    .font(.indraLabel).tracking(2).foregroundColor(.indraMuted)
+                TextField("e.g. Buddhi's Node", text: $displayName)
+                    .textFieldStyle(.plain).font(.indraMono)
+                    .foregroundColor(.indraText)
+                    .padding(10).background(Color.indraCard).cornerRadius(4)
+                    .overlay(RoundedRectangle(cornerRadius: 4)
+                        .stroke(Color.indraBorder, lineWidth: 0.5))
+                    .autocorrectionDisabled()
+                Text("Shown to other validators and delegators.")
+                    .font(.indraMonoSmall).foregroundColor(.indraMuted)
+            }
+
             INDRAButton(title: "Complete Setup — Start Validating",
                         action: { completeSetup() })
         }
@@ -310,7 +325,8 @@ struct SetupWizardView: View {
                 DispatchQueue.main.async {
                     self.walletStore.saveIdentity(
                         validatorId: validatorId,
-                        classicalPk: classicalPk
+                        classicalPk: classicalPk,
+                        displayName: self.displayName.isEmpty ? nil : self.displayName
                     )
                     self.dismiss()
                 }

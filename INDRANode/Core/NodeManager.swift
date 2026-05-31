@@ -43,7 +43,14 @@ class NodeManager: ObservableObject {
     @Published var activeValidators: Int = 0
     @Published var maxActiveValidators: Int = 20
     @Published var validatorSetPhase: Int = 1
+    
+    /// Minimum peers needed for consensus (>66% of active set, minus self)
+    var peersNeeded: Int {
+        let needed = Int(ceil(Double(activeValidators) * 2.0 / 3.0))
+        return max(needed - 1, 1) // subtract self
+    }
     @Published var logs: [LogEntry] = []
+    @Published var sessionNumber: Int = 0
     @Published var diskAvailableGB: Double = 0
 
     private var process: Process?
@@ -51,7 +58,10 @@ class NodeManager: ObservableObject {
     private var pollTimer: Timer?
     private var diskTimer: Timer?
 
-    private init() { checkDiskSpace() }
+    private init() {
+        sessionNumber = UserDefaults.standard.integer(forKey: "indra.node.session_count")
+        checkDiskSpace()
+    }
 
     var nodeBinaryPath: String {
         if let bundled = Bundle.main.path(forResource: "node", ofType: nil) {
@@ -93,6 +103,19 @@ class NodeManager: ObservableObject {
         }
 
         status = .starting
+        
+        // Increment session counter and add separator
+        let session = UserDefaults.standard.integer(forKey: "indra.node.session_count") + 1
+        UserDefaults.standard.set(session, forKey: "indra.node.session_count")
+        sessionNumber = session
+        let formatter = DateFormatter()
+        formatter.dateFormat = "MMM d · h:mm a"
+        let sessionEntry = LogEntry(
+            message: "─── SESSION \(session) · Started \(formatter.string(from: Date())) ───────────────────",
+            level: .info,
+            timestamp: Date()
+        )
+        DispatchQueue.main.async { self.logs.append(sessionEntry) }
         addLog("Starting INDRA node...", level: .info)
 
         let proc = Process()

@@ -7,6 +7,7 @@ class NodeWalletStore: ObservableObject {
     @Published var isOnboarded: Bool = false
     @Published var validatorId: String?
     @Published var classicalPk: String?
+    @Published var displayName: String?
     @Published var balanceSpark: UInt64 = 0
     @Published var rewardsEarnedSpark: UInt64 = 0
     @Published var todayRewardsSpark: UInt64 = 0
@@ -24,6 +25,7 @@ class NodeWalletStore: ObservableObject {
         isOnboarded = onboarded
         validatorId = id
         classicalPk = pk
+        displayName = UserDefaults.standard.string(forKey: "indra.node.display_name")
         
         if isOnboarded, let vid = validatorId, vid.count != 64 {
             reloadFromKeysJson()
@@ -46,7 +48,11 @@ class NodeWalletStore: ObservableObject {
         UserDefaults.standard.set(pk, forKey: "indra.node.classical_pk")
     }
 
-    func saveIdentity(validatorId: String, classicalPk: String) {
+    func saveIdentity(validatorId: String, classicalPk: String, displayName: String? = nil) {
+        if let name = displayName, !name.isEmpty {
+            self.displayName = name
+            UserDefaults.standard.set(name, forKey: "indra.node.display_name")
+        }
         self.validatorId = validatorId
         self.classicalPk = classicalPk
         self.isOnboarded = true
@@ -63,6 +69,8 @@ class NodeWalletStore: ObservableObject {
         isOnboarded = false
         UserDefaults.standard.removeObject(forKey: "indra.node.validator_id")
         UserDefaults.standard.removeObject(forKey: "indra.node.classical_pk")
+        UserDefaults.standard.removeObject(forKey: "indra.node.display_name")
+        UserDefaults.standard.removeObject(forKey: "indra.node.display_name")
         UserDefaults.standard.removeObject(forKey: "indra.node.onboarded")
     }
 }
