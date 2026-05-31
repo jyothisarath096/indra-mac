@@ -1,24 +1,16 @@
-//
-//  ContentView.swift
-//  INDRANode
-//
-//  Created by Kolaparthi Jyothi Sarath on 30/05/26.
-//
-
 import SwiftUI
 
-struct ContentView: View {
-    var body: some View {
-        VStack {
-            Image(systemName: "globe")
-                .imageScale(.large)
-                .foregroundStyle(.tint)
-            Text("Hello, world!")
-        }
-        .padding()
-    }
-}
+struct RootView: View {
+    @EnvironmentObject var walletStore: NodeWalletStore
 
-#Preview {
-    ContentView()
+    var body: some View {
+        Group {
+            if walletStore.isOnboarded {
+                DashboardView()
+            } else {
+                WelcomeView()
+            }
+        }
+        .preferredColorScheme(.dark)
+    }
 }
