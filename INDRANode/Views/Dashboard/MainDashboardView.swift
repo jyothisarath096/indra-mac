@@ -3,6 +3,7 @@ import SwiftUI
 struct MainDashboardView: View {
     @EnvironmentObject var nodeManager: NodeManager
     @EnvironmentObject var walletStore: NodeWalletStore
+    @State private var showValidators = false
 
     var body: some View {
         ScrollView {
@@ -46,8 +47,15 @@ struct MainDashboardView: View {
                             Divider().background(Color.indraBorder)
                             miniStat("PEERS", "\(nodeManager.connectedPeers)")
                             Divider().background(Color.indraBorder)
-                            miniStat("VALIDATORS",
-                                     "\(nodeManager.activeValidators)/\(nodeManager.maxActiveValidators)")
+                            Button(action: { showValidators = true }) {
+                                miniStat("VALIDATORS",
+                                         "\(nodeManager.activeValidators)/\(nodeManager.maxActiveValidators)")
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 4)
+                                            .stroke(Color.indraGold.opacity(0.0), lineWidth: 0)
+                                    )
+                            }
+                            .buttonStyle(.plain)
                             Divider().background(Color.indraBorder)
                             miniStat("PHASE", "\(nodeManager.validatorSetPhase)")
                         }
@@ -154,6 +162,11 @@ struct MainDashboardView: View {
             .padding(.horizontal, 32)
         }
         .background(Color.indraBlack)
+        .sheet(isPresented: $showValidators) {
+            ValidatorsView()
+                .environmentObject(nodeManager)
+                .frame(width: 640, height: 480)
+        }
     }
 
     // MARK: - Status helpers
