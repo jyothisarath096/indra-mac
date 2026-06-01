@@ -60,6 +60,7 @@ class NodeManager: ObservableObject {
 
     private init() {
         sessionNumber = UserDefaults.standard.integer(forKey: "indra.node.session_count")
+        bootstrapPeers = UserDefaults.standard.string(forKey: "indra.node.bootstrap_peers") ?? ""
         checkDiskSpace()
     }
 
@@ -80,6 +81,10 @@ class NodeManager: ObservableObject {
 
     var genesisPath: String { dataDirectory + "/genesis.toml" }
     var keysPath: String    { dataDirectory + "/keys.json" }
+    
+    @Published var bootstrapPeers: String {
+        didSet { UserDefaults.standard.set(bootstrapPeers, forKey: "indra.node.bootstrap_peers") }
+    }
 
     func createDataDirectory() throws {
         try FileManager.default.createDirectory(
@@ -121,12 +126,17 @@ class NodeManager: ObservableObject {
         let proc = Process()
         let pipe = Pipe()
         proc.executableURL = URL(fileURLWithPath: nodeBinaryPath)
-        proc.arguments = [
+        var args = [
             "--data-dir", dataDirectory,
             "--genesis",  genesisPath,
             "--keys",     keysPath,
             "--prune-keep", "50000"
         ]
+        let peers = bootstrapPeers.trimmingCharacters(in: .whitespaces)
+        if !peers.isEmpty {
+            args += ["--bootstrap-peers", peers]
+        }
+        proc.arguments = args
         proc.standardOutput = pipe
         proc.standardError  = pipe
 

@@ -42,6 +42,29 @@ struct SettingsNodeView: View {
                                     .multilineTextAlignment(.trailing)
                                     .frame(width: 80)
                             }
+                            INDRADivider()
+                            VStack(alignment: .leading, spacing: 6) {
+                                HStack {
+                                    Text("Bootstrap Peers").font(.indraBody).foregroundColor(.indraText)
+                                    Spacer()
+                                    Button("Clear") {
+                                        nodeManager.bootstrapPeers = ""
+                                    }
+                                    .buttonStyle(.plain)
+                                    .font(.indraMonoSmall)
+                                    .foregroundColor(.indraRed)
+                                }
+                                TextField("IP:PORT (e.g. 157.157.221.30:19088)",
+                                          text: $nodeManager.bootstrapPeers)
+                                    .textFieldStyle(.plain).font(.indraMonoSmall)
+                                    .foregroundColor(.indraGold)
+                                    .padding(8).background(Color.indraBlack).cornerRadius(4)
+                                    .overlay(RoundedRectangle(cornerRadius: 4)
+                                        .stroke(Color.indraBorder, lineWidth: 0.5))
+                                    .autocorrectionDisabled()
+                                Text("Comma-separated. Leave empty to run as bootstrap node.")
+                                    .font(.indraMonoSmall).foregroundColor(.indraMuted)
+                            }
                         }
                     }
                 }
