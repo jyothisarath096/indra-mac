@@ -80,7 +80,7 @@ struct MainDashboardView: View {
                                     }.cornerRadius(1.5)
                                 }
                                 .frame(height: 3)
-                                Text("\(nodeManager.connectedPeers + 1) of \(nodeManager.peersNeeded + 1) validators needed for consensus")
+                                Text("\(nodeManager.connectedPeers + 1) of \(nodeManager.activeValidators) online · need \(max(nodeManager.peersNeeded - nodeManager.connectedPeers, 0)) more")
                                     .font(.indraMonoSmall).foregroundColor(.indraMuted)
                             }
                         }

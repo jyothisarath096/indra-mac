@@ -80,7 +80,8 @@ struct ValidatorsView: View {
     }
 
     func validatorRow(_ v: ValidatorInfo, rank: Int) -> some View {
-        HStack(spacing: 12) {
+        let isMe = v.id == (UserDefaults.standard.string(forKey: "indra.node.validator_id") ?? "")
+        return HStack(spacing: 12) {
             // Rank
             Text("#\(rank)")
                 .font(.indraMonoSmall).foregroundColor(.indraMuted)
@@ -88,8 +89,14 @@ struct ValidatorsView: View {
 
             // Name + ID
             VStack(alignment: .leading, spacing: 2) {
-                Text(v.name)
-                    .font(.indraBody).foregroundColor(.indraText)
+                HStack(spacing: 6) {
+                    Text(v.name)
+                        .font(.indraBody).foregroundColor(.indraText)
+                    if isMe {
+                        Text("(you)")
+                            .font(.indraMonoSmall).foregroundColor(.indraGold)
+                    }
+                }
                 Text(v.shortId)
                     .font(.indraMonoSmall).foregroundColor(.indraMuted)
             }
@@ -105,13 +112,14 @@ struct ValidatorsView: View {
             .frame(width: 120, alignment: .trailing)
 
             // Status
+            let online = v.isOnline || (isMe && nodeManager.status.isRunning)
             HStack(spacing: 4) {
                 Circle()
-                    .fill(v.isOnline ? Color.indraGreen : Color.indraMuted)
+                    .fill(online ? Color.indraGreen : Color.indraMuted)
                     .frame(width: 6, height: 6)
-                Text(v.isOnline ? "Online" : "Offline")
+                Text(online ? "Online" : "Offline")
                     .font(.indraMonoSmall)
-                    .foregroundColor(v.isOnline ? .indraGreen : .indraMuted)
+                    .foregroundColor(online ? .indraGreen : .indraMuted)
             }
             .frame(width: 80, alignment: .center)
         }
