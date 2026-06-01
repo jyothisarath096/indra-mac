@@ -171,10 +171,10 @@ struct ValidatorsView: View {
         // "online" = node is running AND it's our validator ID
         let myId = UserDefaults.standard.string(forKey: "indra.node.validator_id") ?? ""
         let genesisEntries: [(String, String)] = [
-            ("9d522a057220b851ddf13fa13d16c57e836809a4410669679e797a45bfad57d2", "buddhi"),
-            ("627f00aea2981c4a1b30d613affdec3a94542cbe1f8ffc7f7d28f71c50cbb9ec", "siddhi"),
-            ("22ca276a52e9877881abcaf32e9a25ad7d1d5c4795a6bdb5c993688edc088ecc", "kushal mini"),
-            ("0453b5bd91ada04fc51df3e0380e6e2528851ca713d4430f08ce15de3b1b5db2", "kushal mac"),
+            ("28ce6ab9565c324950a4308ccd1187c473fa737d4e687e12121c04b0e4c8c1b6", "buddhi"),
+            ("864d9d131f0296d3cd438611daabb012f7638381ce84945485f1925c0628aed1", "siddhi"),
+            ("bf642abaff63684b3aa9d989e063d5868fba70889c6b18ff82e233828b1925e1", "kushal"),
+            ("753c569bca3a18247e3de4f538ece4cc8a2e69e0f29e0e9c586d7e6a20f966b2", "bonkai"),
         ]
         return genesisEntries.map { (id, name) in
             ValidatorInfo(
