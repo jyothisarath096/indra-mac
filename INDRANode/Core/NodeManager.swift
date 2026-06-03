@@ -61,6 +61,7 @@ class NodeManager: ObservableObject {
     private init() {
         sessionNumber = UserDefaults.standard.integer(forKey: "indra.node.session_count")
         bootstrapPeers = UserDefaults.standard.string(forKey: "indra.node.bootstrap_peers") ?? ""
+        remoteRPCEndpoint = UserDefaults.standard.string(forKey: "indra.node.remote_rpc") ?? ""
         checkDiskSpace()
     }
 
@@ -82,6 +83,19 @@ class NodeManager: ObservableObject {
     var genesisPath: String { dataDirectory + "/genesis.toml" }
     var keysPath: String    { dataDirectory + "/keys.json" }
     
+    /// If bootstrap peers configured, derive remote RPC URL from first peer
+    var remoteRPCURL: String? {
+        let url = remoteRPCEndpoint.trimmingCharacters(in: .whitespaces)
+        guard !url.isEmpty else { return nil }
+        if url.hasPrefix("http") { return url }
+        return "http://\(url)"
+    }
+    var isRemoteMode: Bool { remoteRPCURL != nil }
+    
+    @Published var remoteRPCEndpoint: String {
+        didSet { UserDefaults.standard.set(remoteRPCEndpoint, forKey: "indra.node.remote_rpc") }
+    }
+
     @Published var bootstrapPeers: String {
         didSet { UserDefaults.standard.set(bootstrapPeers, forKey: "indra.node.bootstrap_peers") }
     }
@@ -96,6 +110,16 @@ class NodeManager: ObservableObject {
     // MARK: - Start / Stop
     func startNode() {
         guard !status.isRunning else { return }
+        
+        // Remote mode — connect to existing node, don't spawn local process
+        if isRemoteMode {
+            status = .running
+            addLog("Remote mode — connecting to \(remoteRPCURL ?? "")", level: .info)
+            addLog("Not spawning local node — dashboard shows remote chain data", level: .info)
+            startPolling()
+            return
+        }
+        
         guard FileManager.default.fileExists(atPath: nodeBinaryPath) else {
             status = .error("Node binary not found")
             addLog("ERROR: Node binary not found at \(nodeBinaryPath)", level: .error)
@@ -184,6 +208,15 @@ class NodeManager: ObservableObject {
 
     func stopNode() {
         guard status.isRunning else { return }
+        
+        // Remote mode — just stop polling, no process to kill
+        if isRemoteMode {
+            status = .stopped
+            stopPolling()
+            addLog("Disconnected from remote node", level: .info)
+            return
+        }
+        
         status = .stopping
         addLog("Stopping node...", level: .info)
         stopPolling()
@@ -219,6 +252,8 @@ class NodeManager: ObservableObject {
 
     // MARK: - Polling
     private func startPolling() {
+        // Poll immediately then every 6 seconds
+        pollChainInfo()
         pollTimer = Timer.scheduledTimer(withTimeInterval: 6.0, repeats: true) { [weak self] _ in
             self?.pollChainInfo()
         }
@@ -233,7 +268,10 @@ class NodeManager: ObservableObject {
     }
 
     private func pollChainInfo() {
-        guard let url = URL(string: "http://127.0.0.1:8545") else { return }
+        let rpcEndpoint = remoteRPCURL ?? "http://127.0.0.1:8545"
+        guard let url = URL(string: rpcEndpoint) else {
+            return
+        }
         var req = URLRequest(url: url)
         req.httpMethod = "POST"
         req.setValue("application/json", forHTTPHeaderField: "Content-Type")
@@ -242,13 +280,16 @@ class NodeManager: ObservableObject {
         URLSession.shared.dataTask(with: req) { [weak self] data, _, _ in
             guard let data = data,
                   let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-                  let result = json["result"] as? [String: Any] else { return }
+                  let result = json["result"] as? [String: Any] else {
+                return
+            }
             DispatchQueue.main.async {
                 self?.blockHeight         = result["height"] as? UInt64 ?? self?.blockHeight ?? 0
                 self?.currentEpoch        = result["epoch"]  as? UInt64 ?? self?.currentEpoch ?? 0
                 self?.activeValidators    = result["active_validators"]     as? Int ?? self?.activeValidators ?? 0
                 self?.maxActiveValidators = result["max_active_validators"] as? Int ?? self?.maxActiveValidators ?? 20
                 self?.validatorSetPhase   = result["validator_set_phase"]   as? Int ?? self?.validatorSetPhase ?? 1
+                self?.connectedPeers      = result["peers"] as? Int ?? self?.connectedPeers ?? 0
                 if case .starting = self?.status ?? .stopped { self?.status = .running }
             }
         }.resume()

@@ -47,14 +47,11 @@ struct SettingsNodeView: View {
                                 HStack {
                                     Text("Bootstrap Peers").font(.indraBody).foregroundColor(.indraText)
                                     Spacer()
-                                    Button("Clear") {
-                                        nodeManager.bootstrapPeers = ""
-                                    }
-                                    .buttonStyle(.plain)
-                                    .font(.indraMonoSmall)
-                                    .foregroundColor(.indraRed)
+                                    Button("Clear") { nodeManager.bootstrapPeers = "" }
+                                        .buttonStyle(.plain).font(.indraMonoSmall)
+                                        .foregroundColor(.indraRed)
                                 }
-                                TextField("IP:PORT (e.g. 157.157.221.30:19088)",
+                                TextField("IP:PORT (e.g. 216.243.220.199:13507)",
                                           text: $nodeManager.bootstrapPeers)
                                     .textFieldStyle(.plain).font(.indraMonoSmall)
                                     .foregroundColor(.indraGold)
@@ -62,8 +59,32 @@ struct SettingsNodeView: View {
                                     .overlay(RoundedRectangle(cornerRadius: 4)
                                         .stroke(Color.indraBorder, lineWidth: 0.5))
                                     .autocorrectionDisabled()
-                                Text("Comma-separated. Leave empty to run as bootstrap node.")
+                                Text("P2P bootstrap address. Leave empty to run as bootstrap node.")
                                     .font(.indraMonoSmall).foregroundColor(.indraMuted)
+                            }
+                            INDRADivider()
+                            VStack(alignment: .leading, spacing: 6) {
+                                HStack {
+                                    Text("Remote RPC").font(.indraBody).foregroundColor(.indraText)
+                                    Spacer()
+                                    Button("Clear") { nodeManager.remoteRPCEndpoint = "" }
+                                        .buttonStyle(.plain).font(.indraMonoSmall)
+                                        .foregroundColor(.indraRed)
+                                }
+                                TextField("IP:PORT (e.g. 216.243.220.199:13508)",
+                                          text: $nodeManager.remoteRPCEndpoint)
+                                    .textFieldStyle(.plain).font(.indraMonoSmall)
+                                    .foregroundColor(.indraGold)
+                                    .padding(8).background(Color.indraBlack).cornerRadius(4)
+                                    .overlay(RoundedRectangle(cornerRadius: 4)
+                                        .stroke(Color.indraBorder, lineWidth: 0.5))
+                                    .autocorrectionDisabled()
+                                Text("If set, dashboard shows this remote node. No local node runs.")
+                                    .font(.indraMonoSmall).foregroundColor(.indraMuted)
+                                if !nodeManager.remoteRPCEndpoint.isEmpty {
+                                    Text("→ Remote mode active")
+                                        .font(.indraMonoSmall).foregroundColor(.indraGreen)
+                                }
                             }
                         }
                     }
