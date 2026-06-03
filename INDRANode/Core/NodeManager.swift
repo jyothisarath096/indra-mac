@@ -254,8 +254,10 @@ class NodeManager: ObservableObject {
     private func startPolling() {
         // Poll immediately then every 6 seconds
         pollChainInfo()
+        pollValidatorInfo()
         pollTimer = Timer.scheduledTimer(withTimeInterval: 6.0, repeats: true) { [weak self] _ in
             self?.pollChainInfo()
+            self?.pollValidatorInfo()
         }
         diskTimer = Timer.scheduledTimer(withTimeInterval: 30.0, repeats: true) { [weak self] _ in
             self?.checkDiskSpace()
@@ -265,6 +267,31 @@ class NodeManager: ObservableObject {
     private func stopPolling() {
         pollTimer?.invalidate(); pollTimer = nil
         diskTimer?.invalidate(); diskTimer = nil
+    }
+
+    private func pollValidatorInfo() {
+        let walletStore = NodeWalletStore.shared
+        guard let myId = walletStore.validatorId else { return }
+        let rpcEndpoint = remoteRPCURL ?? "http://127.0.0.1:8545"
+        guard let url = URL(string: rpcEndpoint) else { return }
+        var req = URLRequest(url: url)
+        req.httpMethod = "POST"
+        req.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        req.httpBody = #"{"jsonrpc":"2.0","method":"indra_getValidatorSet","params":[],"id":1}"#.data(using: .utf8)
+        req.timeoutInterval = 4
+        URLSession.shared.dataTask(with: req) { [weak self] data, _, _ in
+            guard let data = data,
+                  let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                  let result = json["result"] as? [String: Any],
+                  let validators = result["validators"] as? [[String: Any]] else { return }
+            // Find our validator by ID
+            if let mine = validators.first(where: { $0["validator_id"] as? String == myId }),
+               let name = mine["name"] as? String, !name.isEmpty {
+                DispatchQueue.main.async {
+                    walletStore.displayName = name
+                }
+            }
+        }.resume()
     }
 
     private func pollChainInfo() {
